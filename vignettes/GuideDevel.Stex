@@ -1,10 +1,10 @@
 \documentclass[english]{article}
 \newcommand{\code}{\emph}
 \newcommand{\pkg}{\textsl}
-\title{Time Series Database Interface Illustrations (packages in Development)}
+\title{TSdbi Guide to Development Work in Progress}
 \begin{document}
 \maketitle
-%\VignetteIndexEntry{TSdata Guide}
+%\VignetteIndexEntry{TSdbi Guide to Development Work in Progress}
 \SweaveOpts{eval=FALSE,echo=TRUE,results=hide,fig=FALSE}
 %\SweaveOpts{eval=TRUE,echo=TRUE,results=verbatim,fig=TRUE}
 \begin{Scode}{echo=FALSE,results=hide}
@@ -43,25 +43,6 @@ con <- TSconnect("sdmx", dbname="BoC")
 z <- TSget(c("CDOR", "OIS", "SWAPPEDTOFLOAT"), con=con)
 tfplot(z, Title="From Bank of Canada")
 TSdescription(z) 
-\end{Scode}
-
-\section{TSjson (with Statistics Canada)}
-
-\pkg{TSjson} provides an interface that is consistent with \pkg{TSdbi} for 
-using json objects returned by some servers, or passed by servers that provide
-a proxy interface to other databases. 
-\pkg{TSjson} does not support writing data to the database.
-
-\begin{Scode}
-require("TSjson")
-require("tfplot")
-
-# user/passwd host from file ~/.TSjson.cfg
-con <- TSconnect("json", dbname="statcan")
-
-# quarterly
-x <- TSget("v498086", con)
-tfplot(x)
 \end{Scode}
 
 \end{document}
