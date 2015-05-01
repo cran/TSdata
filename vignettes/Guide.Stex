@@ -28,7 +28,7 @@
 \tableofcontents
 \end{titlepage}
 \begin{Scode}{echo=FALSE,results=hide}
- options(continue="  ")
+options(continue="  ")
 \end{Scode}
 %%
 \section{Introduction}
@@ -41,6 +41,17 @@ common \emph{API}, so simplicity of changing the data source is a primary
 feature. 
 The vignette also illustrates some simple time series
 manipulation and plotting using packages \pkg{tframe} and \pkg{tfplot}.
+While these do not need to be attached for data retrieval, functions in these
+packages are used in several places in this vignette so they should be
+attached to run examples in this vignette. 
+This is done with
+%%
+\begin{Scode}{results=verbatim,fig=FALSE}
+library("tframe")  
+library("tfplot")  
+\end{Scode}
+%%
+Package \pkg{tframePlus} is also used but will be attached when needed.
 
 To generate this vignette requires most of the \pkg{TS*} packages, but 
 users will only need one, or a few of these packages. For example, a time series
@@ -57,19 +68,21 @@ getting the pdf file directly from CRAN at
 \url{http://cran.at.r-project.org/web/packages/TSdata/index.html} 
 Many parts
 of the vignette can be run by loading the appropriate packages, but some
-examples use data that has been loaded into a larger database 
+examples use data that has been loaded into a local database 
 and it will not be possible to reproduce those examples without the
 underlying database.
 
 Section \ref{sec:SimpleExamples} of this vignette illustrates the mechanism for
 connecting to a data source. The connection contains all the source specific 
 information so, once the connection is established, the syntax for retrieving
-data is similar for different sources.
-The section also illustrates packages that 
-pull data from Internet sources. This currently includes \pkg{TSgetSymbol}, 
-\pkg{TShistQuote}, \pkg{TSjson}, \pkg{TSxls}, and \pkg{TSzip}, but others are in progress.
-These packages only get data, they do not support writing data to the database.
-Finally, the section also illustrates the flexibility to return different types
+data is similar for different sources. The section illustrates packages that 
+pull data from Internet sources. This currently includes \pkg{TSsdmx}, \pkg{TSjson}, 
+and \pkg{TSmisc}. (Package \pkg{TSmisc} is an amalgamation of former packages 
+\pkg{TSgetSymbol} \pkg{TShistQuote}, \pkg{TSxls}, \pkg{TSzip}, and some new connections.)
+The section starts
+with a table indicating which packages and connections might be used for various data
+sources. These packages only get data, they do not support writing data to the database.
+Finally, the section also illustrates the flexibility to return different representations
 of time series objects.
 
 Section \ref{sec:SQL} illustrates the SQL packages \pkg{TSPostgreSQL}, 
@@ -80,10 +93,11 @@ The package \pkg{TSOracle} is available on R-forge at
 in place to test it properly. (If anyone would be interested in doing this,
 please contact me, pgilbert.ttv9z@ncf.ca.)
 These packages get data and also support writing data to the database.
-See Appendix ``B'' (section \ref{appdx:B}) and the vignette in package \pkg{TSdbi} for more explanation 
+See Appendix ``B'' (separate vignette) and the vignette in package \pkg{TSdbi} 
+for more explanation 
 of the underlying database tables, and for bulk loading of
 data into a database.
-The section illustrates writing artificial data to the database. 
+The section illustrates the packages by writing artificial data to the database. 
 
 Section \ref{sec:MoreExamples} provides additional examples of \pkg{TSdbi}
 functionality and of using and graphing series. 
@@ -118,12 +132,13 @@ provide a common API for interfacing with time series databases, and an easy
 mechanism to specify the type of time series object that should be returned, for
 example, a \code{ts} object or a \code{zoo} \citep{zoo} object. One consequence of providing
 a common interface is that special strengths of some of the underlying packages
-cannot always be used. If you really need some of these features then you may
+cannot always be used. If you really need some of these features then you will
 need to go directly to the underlying package. However, if you limit your
-reliance on these underlying features then you will be able to move from one
+reliance on these special features then you will be able to move from one
 data source to another much more easily.
 
-Loading a \pkg{TS*} package will also load required packages \pkg{TSdbi}, 
+Loading a \pkg{TS*} package will also attach or load the namespace of required 
+packages \pkg{TSdbi}, 
 \pkg{DBI} \citep{DBI}, \pkg{methods} \citep{methods}, \pkg{tframePlus}, 
 \pkg{zoo}, and then any underlying package that the specific \pkg{TS*} package uses.
 
@@ -137,7 +152,7 @@ some simple calculations and graphs are done to demonstrate how the data
 might be used.
 However, the purpose of the \pkg{TS*} packages is to provide a common interface,
 not to do all time series calculations and graphics. Once you have the data, 
-you should be able to use whatever other \pkg{R} 
+you should be able to use whatever other \proglang{R} 
 packages you like for your calculations and graphs.
 
 The generic aspect of the interface API is accomplished by putting the
@@ -145,36 +160,215 @@ information specific to the underlying source into the ``connection''. Once the
 connection is established, other aspects of using data are the same, so one
 connection can be easily interchanged with another, and so your programs do not
 need to be changed when the data source is changed. (But, of course, some
-changes will be needed if the names of the variables change.) 
+changes will be needed if the series identifiers of the variables change on
+the different databases.) 
+
+The following table indicates various data sources and the \pkg{TS*} connections 
+and packages that can be used to extract data from them, \pkg{TSsdmx} is a 
+wrapper for package \pkg{RJSDMX} \citep{RJSDMX} maintained by Attilio Mattiocco
+at the Banca d'Italia. It uses SDMX/REST
+to connect to several important sources for economic data. This API is probably the 
+main future direction, and some of the other interfaces should be considered temporary,
+pending the institutions getting SDMX/REST 2.1 in place. Package \pkg{RJSDMX} has an
+\pkg{addProvider} function which can be used to add SDMX/REST 2.1 compliant servers.
+
+%%%%%%%%%%%%%%%%%%%
+\begin{table}
+\begin{center}
+\caption{Connections for various data sources.}
+\label{tab:connections}
+\begin{tabular}{@{}lclc@{}}
+\\
+\hline \\
+Data source      &     source URL		 & Package&Connection \\
+\\
+\hline \\
+ABS (Australia)  &\url{www.abs.gov.au}  	 & TSsdmx & sdmx \\
+ECB       	 &\url{www.ecb.org}		 & TSsdmx & sdmx \\
+EuroStat	 &\url{epp.eurostat.ec.europa.eu}& TSsdmx & sdmx \\
+ILO	      	 &\url{www.ilo.org}		 & TSsdmx & sdmx \\
+IMF	      	 &\url{www.imf.org}		 & TSsdmx & sdmx \\
+INEGI (Mexico)	 &\url{www.inegi.org.mx}	 & TSsdmx & sdmx \\
+ISTAT$^5$ (Italy)&\url{www.istat.it}		 & TSsdmx & sdmx \\
+NBB   (Belgium)	 &\url{www.nbb.be}		 & TSsdmx & sdmx \\
+OECD	      	 &\url{www.oecd.org}		 & TSsdmx & sdmx \\
+UIS	      	 &\url{www.uis.unesco.org}	 & TSsdmx & sdmx \\
+UN$^2$	      	 &\url{comtrade.un.org} 	 & TSsdmx & sdmx \\
+Unesco     	 &\url{www.uis.unesco.org}	 & TSsdmx & sdmx \\
+World Bank$^1$	 &\url{worldbank.org}		 & TSsdmx & sdmx \\
+BIS$^3$	      	 &\url{www.bis.org}		 & TSsdmx & sdmx \\
+FRED    	 &\url{research.stlouisfed.org}  & TSmisc & histQuote \\
+FRED    	 &\url{research.stlouisfed.org}  & TSmisc & getSymbol \\
+RBA (Australia)  &\url{www.rba.gov.au}  	 & TSmisc & xls \\
+Statistics Canada&\url{www.statcan.gc.ca}	 & TSjson$^{4,6}$ & json \\
+Bank of Canada	 &\url{www.bank-banque-canada.ca}& TSmisc2$^4$ & Quandl \\
+Yahoo    	 &\url{quote.yahoo.com} 	 & TSmisc & getSymbol \\
+Yahoo    	 &\url{quote.yahoo.com} 	 & TSmisc & histQuote \\
+Oanda    	 &\url{www.oanda.com}		 & TSmisc & histQuote \\
+PiTrading    	 &\url{pitrading.com}		 & TSmisc & zip \\
+Quandl	  	 &\url{www.quandl.com}  	 & TSmisc2$^4$ & Quandl \\
+Bloomberg 	 &\url{www.bloomberg.com}	 & TSbbg$^4$ & bbg \\
+\\
+\hline \\
+\multicolumn{4}{l}{$^1$ beta} \\
+\multicolumn{4}{l}{$^2$ planning} \\
+\multicolumn{4}{l}{$^3$ requires an account} \\
+\multicolumn{4}{l}{$^4$ not on CRAN, on R-forge \url{tsdbi.r-forge.r-project.org/}} \\
+\multicolumn{4}{l}{$^5$ requires free registration at \url{sdmx.istat.it/registr_ut_sep/}} \\
+\multicolumn{4}{l}{$^6$ using python mechanize,  unstable website API} \\
+\\
+\hline
+\end{tabular}
+\end{center}
+\end{table}
+%%%%%%%%%%%%%%%%%%%
+The above URL is for the organization. The SDMX data web URL can be determined with \code{RJSDMX::sdmxHelp()} using the build command action to give the URL 
+of an sdmx query.
+
+The table is not comprehensive. In particular, Quandl, Bloomberg, Yahoo, Oanda, 
+and some others, provide access to data from a large number of sources, especial market data.
 %%
-\subsection{\pkg{TShistQuote} and \pkg{TSgetSymbol}}
+\subsection{\code{SDMX} Data}
 %%
-Packages \pkg{TShistQuote} and \pkg{TSgetSymbol}  provide mechanisms to retrieve
-historical quote data from various sources. 
-\pkg{TShistQuote} is a wrapper to \code{get.hist.quote} in package
+SDMX is emerging as a widely used standard for time series exchange. It is supported by several 
+large organizations and has evolved over many years. Some of the ad hoc mechanisms 
+in other \pkg{TS*} packages will be replaced as more organizations implement this standard.
+It provides capabilites for transmitting large dataset, mixed frequency, and metada. 
+These are well beyond the scope of what is used by the TSdbi API. 
+The \pkg{RJSDMX} package provides
+an interface to SDMX/REST 2.1 compliant databases. Similar to other \pkg{TS*} packages, the 
+wrapper \pkg{TSsdmx} uses only some of the capabilities of the underlying package.  
+Only reading of databases is supported.
+
+By default \pkg{RJSDMX} prints more output than \proglang{R} users will typically expect. 
+This output can be supressed by settings in a configuration file, which has been done 
+for this vignette. See Appendix ``A'' for more details.
+
+\begin{Scode}{results=verbatim,fig=TRUE}
+library("TSsdmx")  
+oecd <- TSconnect("sdmx", dbname="OECD")
+
+x <- TSget('QNA.CAN.PPPGDP.CARSA.Q', oecd)
+
+tfplot(x, title="Canada: Nominal GDP at PPP?", 
+         subtitle="quarterly national accounts, SAAR",
+	 ylab="guess the units")
+
+\end{Scode}
+
+Determining what the above series is will be left as an exercise. 
+SDMX queries are roughly like database queries with the fields separated by dots.
+They can use \code{*}, \code{|}, and \code{+} to return muliple series.
+\code{TSget} provides the ability to rename series on retrieval when
+\code{|}, and \code{+} are used, but not when \code{*} is used.
+
+\begin{Scode}{results=verbatim,fig=TRUE}
+x <- TSget('QNA.CAN+USA+MEX.PPPGDP.CARSA.Q', 
+         names=c("Canada", "United States", "Mexico"),   oecd)
+
+tfOnePlot(ytoypc(x), title="Nominal GDP Growth PPP?", 
+         subtitle="quarterly national accounts, national currency, SAAR",
+	 ylab="relative to USA", start=c(1975,1),
+	 legend=seriesNames(x), legend.loc="topright")
+\end{Scode}
+
+Several different connections can be defined, and data retreived from them.
+
+\begin{Scode}{results=verbatim,fig=FALSE}
+eurostat <- TSconnect("sdmx", dbname="EUROSTAT")
+ecb <- TSconnect("sdmx", dbname="ECB")
+abs <- TSconnect("sdmx", dbname="ABS")
+
+z <- TSget("ei_nama_q.Q.MIO-EUR.SWDA.CP.NA-P72.IT", eurostat)
+\end{Scode}
+
+\code{TSget} allows for specifying start and end dates.
+
+\begin{Scode}{results=verbatim,fig=FALSE}
+z <- TSget('EXR.Q.USD.EUR.SP00.A', 
+                start="2008-Q2", end="2014-Q3", ecb)
+z <- TSget('EXR.Q.USD.EUR.SP00.A', 
+                start=c(2008,2), end=c(2014,3), ecb)
+\end{Scode}
+
+The first request above uses SDMX syntax for \code{start} and \code{end}, 
+which is passed to the query, and only data in the range is returned from 
+the server. 
+The second syntax uses an \proglang{R} convention which is difficult to translate 
+into the query, because it is necessary to first determine the frequency of the 
+data. For this query all the data is returned and the truncation is done 
+in \proglang{R}. For \code{sdmx} connections, character string \code{start} 
+and \code{end} specifications are assumed to be SDMX and are passed to the
+underlying \pkg{RJSDMX} call and on to the server, otherwise truncation is 
+done in \proglang{R} on the returned data.
+
+A connection can be specified to be used as the default, so it does not need to
+be specified each time:
+
+\begin{Scode}{fig=FALSE}
+options(TSconnection=abs)
+z <- TSget("BOP.1.100.10.Q", start=c(1990, 1), end=c(2012, 2)) 
+\end{Scode}
+
+Several different connections will be used in this vignette, and so a default
+will not be used. To unset the default
+\begin{Scode}
+options(TSconnection=NULL)
+\end{Scode}
+
+By default most \code{TSget} methods return a class \code{ts} series when
+that is possible (annual, quarterly, monthly, or semi-annual data) and
+\code{zoo} series otherwise. Thus the class of the series returned above is
+\code{ts}, but \code{zoo} can be specified.
+\begin{Scode}{results=verbatim,fig=FALSE}
+class(z)
+z <- TSget("BOP.1.100.10.Q", start=c(1990, 1), end=c(2012, 2), 
+                 abs, TSrepresentation="zoo")
+class(z)
+\end{Scode}
+
+A session default can also be set for this with
+\begin{Scode}
+options(TSrepresentation="zoo")
+\end{Scode}
+in which case all results will be return as \code{zoo} objects unless otherwise
+specified. The session default is unset with
+\begin{Scode}
+options(TSrepresentation=NULL)
+\end{Scode}
+Beware that it does not make sense to set \code{ts} as the default, because it
+is already the default for all series that can be represented as \code{ts}, and
+will not work correctly for other series.
+Other representations are possible. See the \code{TSget} help for 
+more details. 
+%%
+\subsection{\code{histQuote} and \code{getSymbol}}
+%%
+\code{histQuote} and \code{getSymbol} in package \pkg{TSmisc} provide mechanisms to 
+retrieve historical quote data from various sources. 
+\code{histQuote} is a wrapper to \code{get.hist.quote} in package
 \pkg{tseries} \citep{tseries}. A connection to Yahoo Finance is established, and data 
 retrieved and plotted by
 
 \begin{Scode}{results=verbatim,fig=TRUE}
-  library("TShistQuote")  
-  yahoo <- TSconnect("histQuote", dbname="yahoo") 
-  x <- TSget("^gspc", quote = "Close", con=yahoo)
-  library("tfplot")  
-  tfplot(x)
+library("TSmisc")  
+yahoo <- TSconnect("histQuote", dbname="yahoo") 
+x <- TSget("^gspc", quote = "Close", con=yahoo)
+library("tfplot")  
+tfplot(x)
 \end{Scode}
 
-Package \pkg{TSgetSymbol} is a wrapper to \code{getSymbols} in package
+Package \pkg{getSymbol} is a wrapper to \code{getSymbols} in package
 \pkg{quantmod} \citep{quantmod}. A connection to Yahoo using this, and
 retrieving the same data, can be done by
 
 \begin{Scode}{results=verbatim,fig=TRUE}
-  library("TSgetSymbol")  
-  yahoo <- TSconnect("getSymbol", dbname="yahoo") 
-  x <- TSget("^gspc", quote = "Close", con=yahoo)
-  tfplot(x)
+yahoo <- TSconnect("getSymbol", dbname="yahoo") 
+x <- TSget("^gspc", quote = "Close", con=yahoo)
+tfplot(x)
 \end{Scode}
 
-Notice that the only difference is the library that is loaded and the name of
+Notice that the only difference is the name of
 the driver provided when establishing the connection. After that, the code is the
 same (and the data from the two connections should be the same, 
 other than the difference in the default start date). This is the
@@ -226,31 +420,29 @@ data point is not the same on these two connections.)
 A certain amount of meta data can be returned with the time series object 
 and can be extracted with these utilities:
 \begin{Scode}{results=verbatim,fig=FALSE}
-  TSdescription(x) 
-  TSdoc(x) 
-  TSlabel(x) 
-  TSsource(x) 
+TSdescription(x) 
+TSdoc(x) 
+TSlabel(x) 
+TSsource(x) 
 \end{Scode}
 %%
 %%
-\subsection{\pkg{TSgetSymbol} with FRED}
+\subsection{\code{getSymbol} with FRED}
 
-Package \pkg{TSgetSymbol} can also be used to get data from the Federal Reserve 
+\pkg{getSymbol} can also be used to get data from the Federal Reserve 
 Bank of St.Louis, as will be illustrated here. 
 (Look at \url{http://research.stlouisfed.org/fred/} to find series identifiers.)
 
 \begin{Scode}{fig=TRUE}
-  library("TSgetSymbol")  
-  fred <- TSconnect("getSymbol", dbname="FRED") 
-  tfplot(TSget("M2", fred))
+library("TSmisc")  
+fred <- TSconnect("getSymbol", dbname="FRED") 
+tfplot(TSget("M2", fred))
 \end{Scode}
 
-A connection can be specified to be used as the default, so it does not need to
-be specified each time:
+Additional information can be specified in \code{tfplot} and \code{tfOnePlot}:
 
 \begin{Scode}{fig=TRUE}
-  options(TSconnection=fred)
-  tfOnePlot(percentChange(TSget("M2"), lag=52), 
+tfOnePlot(percentChange(TSget("M2", fred), lag=52), 
     title = "Running commentary, blah, blah, blah", 
     subtitle="Broad Money (M2)",
     ylab= "y/y percent change*",
@@ -260,20 +452,15 @@ be specified each time:
     lastObs = TRUE )
 \end{Scode}
 
-Several different connections will be used in this vignette, and so a default
-will not be used. To unset the default
-\begin{Scode}
-  options(TSconnection=NULL)
-\end{Scode}
-
 It is also possible to return multiple series, but they should all be of the
 same frequency. (The FRED series called M2 is a weekly series). 
 
 \begin{Scode}{fig=TRUE,height=8}
-  x <- TSget(c("CPIAUCNS","M2SL"), fred)
-  tfplot(x, 
+x <- TSget(c("CPIAUCNS","M2SL"), fred)
+tfplot(x, 
     title = "Running commentary, blah, blah, blah", 
-    subtitle=c("Consumer Price Index for All Urban Consumers: All Items", "Broad Money"),
+    subtitle=c("Consumer Price Index for All Urban Consumers: All Items",
+               "Broad Money"),
     ylab= c("Index 1982-84=100", "Billions of dollars"),
     source= c("Data Source: Federal Reserve Bank of St.Louis (CPIAUCNS)",
               "Data Source: Federal Reserve Bank of St.Louis (M2SL)"),
@@ -284,39 +471,22 @@ same frequency. (The FRED series called M2 is a weekly series).
 
 
 \begin{Scode}{results=verbatim,fig=FALSE}
-  TSdates(c("CPIAUCNS","M2SL"), fred) 
+TSdates(c("CPIAUCNS","M2SL"), fred) 
 \end{Scode}
 
-By default, \code{TSget} returns \code{ts} time series for annual, quarterly,
-and monthly data, and \code{zoo} series otherwise. It is possible to specify the
-type of object to return:
+It is possible to specify the type of object to return:
 
 \begin{Scode}
-  x <- TSget(c("CPIAUCNS","M2SL"), fred, TSrepresentation="zoo")
-  class(x) 
+x <- TSget(c("CPIAUCNS","M2SL"), fred, TSrepresentation="zoo")
+class(x) 
 \end{Scode}
-
-A session default can also be set for this with
-\begin{Scode}
-  options(TSrepresentation="zoo")
-\end{Scode}
-in which case all results will be return as \code{zoo} objects unless otherwise
-specified. The session default is unset with
-\begin{Scode}
-  options(TSrepresentation=NULL)
-\end{Scode}
-Beware that it does not make sense to set \code{ts} as the default, because it
-is already the default for all series that can be represented as \code{ts}, and
-will not work correctly for other series.
-Other representations are possible. See the \code{TSget} help for 
-more details. 
 
 The following connects to yahoo and loads the ticker symbol for Ford. 
 This is a multivariate time series with open, close, etc.
 \begin{Scode}{fig=TRUE,height=8}
-  yahoo <- TSconnect("getSymbol", dbname="yahoo") 
-  x <- TSget("F", con=yahoo)
-  plot(x)
+yahoo <- TSconnect("getSymbol", dbname="yahoo") 
+x <- TSget("F", con=yahoo)
+plot(x)
 \end{Scode}
 
 Most of the plots in this vignette are done with the utilities in the 
@@ -330,7 +500,7 @@ In the case of the ticker data above, \code{tfplot} displays graphs in verticle
 panels. However, six panels do not nicely fit on a printed page. 
 The first three are displayed with:
 \begin{Scode}{fig=TRUE,height=12}
-  tfplot(x,series=1:3)
+tfplot(x,series=1:3)
 \end{Scode}
 
 It is possible to specify the number of graphs on an ouput screen
@@ -341,7 +511,7 @@ you want to stop and prompt for <Return> between pages in the graphics output.
 The \code{quote} argument to \code{TSget} can be used to specify that only a 
 subset of the market data should be returned:
 \begin{Scode}{fig=TRUE}
-  tfOnePlot(TSget("F", con=yahoo, quote=c("Open", "Close")),
+tfOnePlot(TSget("F", con=yahoo, quote=c("Open", "Close")),
      title="Ford from Yahoo;  Open (black); Close (red)",
      ylab="Price")
 \end{Scode}
@@ -359,8 +529,7 @@ downloadable file. This really should be considered a temporary solution, until
 the data provider implements a true API. The current version of \pkg{TSjson}
 provides a connection to Statistics Canada's \url{http://www.statcan.gc.ca} 
 Cansim database. (You should look at the Statistics Canada site to find series 
-identifiers.) Please contact the package maintainer if you would like to help 
-implement connections to other sites.
+identifiers.)
 
 The connection can be established in two different ways. The simplest requires
 a system with \proglang{Python} installed, and \proglang{Python} modules 
@@ -368,6 +537,23 @@ a system with \proglang{Python} installed, and \proglang{Python} modules
 Python 2 as not all modules are available for Python 3. Additional details 
 are provided in a README file distributed with the \pkg{TSjson} package
 and also copied in an appendix here. 
+
+Checking that an adequate Python and modules are available on the system can
+be done with
+\begin{Scode}{eval=FALSE}
+require('findpython')
+
+cmdExists <- can_find_python_cmd(
+    minimum_version = '2.6',
+    maximum_version = '2.9',
+    required_modules = c('sys', 're', 'urllib2', 'csv', 'mechanize', 'json')
+    )
+
+if (!cmdExists)  stop('adequate python was not found. ')
+\end{Scode}
+An adequate python would normally have been needed to install package
+\pkg{TSjson} but system changes after the installation could break it.
+
 Installing Python may be difficult in environments where users cannot easily
 install software, but a second method using
 a proxy server can be used. The proxy server needs \proglang{Python} and the
@@ -377,21 +563,29 @@ The proxy server can be anywhere on the Internet.
 
 The following examples use the first method. More details on establishing
 connections with the second method are provided in the appendix section
-\ref{appdx:TSjson}. First, establish a connection
+(separate vignette). First, establish a connection
 
-\begin{Scode}
+Although the package \pkg{TSjson} usually works, it is not really stable because
+the web interface is not a proper API and can change from time to time.
+For this reason, \pkg{TSjson} is not on CRAN but available on R-forge
+at \url{tsdbi.r-forge.r-project.org/}.
+The following examples are not being evaluated because failures
+prevent reliable automatic generation of the vignette. 
+\begin{Scode}{eval=FALSE}
 require("TSjson")
 cansim <- TSconnect("json", dbname="cansim")
 \end{Scode}
 
 Now data can be retrieved and a plot generated by
-\begin{Scode}{fig=TRUE}
+%%begin{Scode}{fig=TRUE}
+%% occassional problems
+\begin{Scode}{eval=FALSE,fig=FALSE}
 x <- TSget("v498086", cansim)
 tfplot(x)
 \end{Scode}
 
 Meta data can also be retrieved:
-\begin{Scode}{results=verbatim}
+\begin{Scode}{eval=FALSE,results=verbatim}
 TSdescription("v498086", cansim)
 TSdoc("v498086", cansim)
 TSlabel("v498086", cansim)
@@ -400,7 +594,8 @@ TSsource("v498086", cansim)
 
 A transformation of the data can be done, more detail added to the graph, and
 a start date specified:
-\begin{Scode}{fig=TRUE,width=7.0,height=8}
+%% \begin{Scode}{eval=TRUE,fig=TRUE,width=7.0,height=8}
+\begin{Scode}{eval=FALSE}
 tfplot(ytoypc(x), start=c(1975,1),
    ylab="Year-to-Year Growth Rate",
    title="Canadian GDP", 
@@ -408,26 +603,31 @@ tfplot(ytoypc(x), start=c(1975,1),
    lastObs=TRUE)
 \end{Scode}
 
+The default settings of \pkg{tfplot} parameters usually work fairly well for 
+interactive use but multi-series graphs may be squashed as above when pdf is
+output. The next illustrates one way to achieve more specific control,
+which will often be necessary for generating pdf documents.
+The series can be retreived and plotted in one step:
+%% \begin{Scode}{eval=TRUE,fig=TRUE,width=7.0,height=8}
+\begin{Scode}{eval=FALSE}
+oldpar <- par(omi=c(0.1,0.1,0.1,0.1),mar=c(3.1,4.1,0.6,0.1))
+tfplot(ytoypc(TSget(c("v498086", "v498087"), cansim)))
+par(oldpar)
+\end{Scode}
+
+
 Sometimes it is useful to check availability:
-\begin{Scode}{results=verbatim}
+%% \begin{Scode}{eval=TRUE,results=verbatim}
+\begin{Scode}{eval=FALSE}
 TSdates(c("v498086", "v498087"), cansim)
 \end{Scode}
 
-Or, plot more than one series:
-\begin{Scode}{fig=TRUE,width=7.0,height=8}
- oldpar <- par(omi=c(0.1,0.1,0.1,0.1),mar=c(3.1,4.1,0.6,0.1))
- tfplot(ytoypc(TSget(c("v498086", "v498087"), cansim)))
- par(oldpar)
-\end{Scode}
-
-The default settings of \pkg{tfplot} parameters usually work fairly well for 
-interactive use. The above illustrates one way to achieve more specific control,
-which will often be necessary for generating pdf documents.
-
 The meta data can also be retrieved with the series, which will generally be
 faster than retreiving it separately, if it is needed:
-\begin{Scode}{fig=TRUE,results=verbatim}
-resMorg <- TSget("V122746", cansim, TSdescription=TRUE, TSdoc=TRUE, TSlabel=TRUE)
+%% \begin{Scode}{eval=TRUE,fig=TRUE,results=verbatim}
+\begin{Scode}{eval=FALSE}
+resMorg <- TSget("V122746", cansim, TSdescription=TRUE, 
+                   TSdoc=TRUE, TSlabel=TRUE)
 TSdescription(resMorg)
 TSdoc(resMorg)
 TSlabel(resMorg)
@@ -444,13 +644,13 @@ tfplot(ytoypc(resMorg), annualizedGrowth(resMorg),
 \end{Scode}
 %%
 %%
-\subsection{TSxls}
+\subsection{xls}
 %%
-\pkg{TSxls} provides methods for the \pkg{TSdbi} interface, allowing the 
+The \code{xls} interface allows the 
 use of spreadsheets as if they are a database. (This is a poor substitute 
 for a real database, but is sometimes convenient.) 
-\pkg{TSxls} uses package \code{read.xls} in \pkg{gdata} \citep{gdata}
-\pkg{TSxls} does not support writing data to the spreadsheet (but to write 
+\code{xls} uses \code{read.xls} in package \pkg{gdata} \citep{gdata}
+\code{xls} does not support writing data to the spreadsheet (but to write 
 time series data to a spreadsheet see \code{TSwriteXLS} in \pkg{tframePlus},
 discussed in section \ref{sec:JustData}). The spreadsheet can be a 
 remote file, which is retrieved when the connection is established.
@@ -458,10 +658,10 @@ remote file, which is retrieved when the connection is established.
 The following retrieves a file from the Reserve Bank of Australia and maps 
 the elements that are used: data, dates, identifiers, and series names. 
 \begin{Scode}{results=verbatim}
-  library("TSxls")  
-  rba <- TSconnect("xls",
-          dbname="http://www.rba.gov.au/statistics/tables/xls/d03hist.xls",
-          map=list(ids  =list(i=11,     j="B:Q"), 
+library("TSmisc")  
+rba <- TSconnect("xls", dbname=
+      "http://www.rba.gov.au/statistics/tables/xls/d03hist.xls",
+    map=list(ids  =list(i=11,     j="B:Q"), 
 	           data =list(i=12:627, j="B:Q"), 
 	           dates=list(i=12:627, j="A"),
                    names=list(i=4:7,    j="B:Q"), 
@@ -472,21 +672,29 @@ the elements that are used: data, dates, identifiers, and series names.
 
 This also illustrates how \code{tsrepresentation} can be specified as an 
 arbitrary function to set the returned time series object representation.
+Note also that dates may display in the spreadsheet one way 
+(e.g. 02-Jan-1989), show in the spreadsheet formula box in another way
+(e.g. 1989-01-02), and import still differently 
+(e.g. 02/Jan/1989). And the format could change when the file is saved,
+possibly depending on what features are available in the spreadsheet program.
+The imported format needs to be used when tsrepresentation
+is specified. If in doubt, look at the connection slot \code{@dates} 
+(\code{rba@dates} above).
 
-Beware that data is read into \pkg{R} when the connection is established, so
-changes in the spreadsheet will not be visible in \pkg{R} until a new connection
-is established.
+Beware that data is read into \proglang{R} when the connection is established, so
+changes in the spreadsheet will not be visible in \proglang{R} until a new connection
+is established (in contrast to other \code{TS*} packages).
 
 \begin{Scode}{results=verbatim,fig=TRUE}
-  x <- TSget("DMACN", rba)
-  require("tfplot")
-  tfplot(x)
+x <- TSget("DMACN", rba)
+require("tfplot")
+tfplot(x)
 \end{Scode}
 
 \begin{Scode}{results=verbatim,fig=TRUE,height=8}
-  x <- TSget(c("DMAM1N", "DMAM3N"), rba)
-  tfplot(x)
-  TSdescription(x) 
+x <- TSget(c("DMAM1N", "DMAM3N"), rba)
+tfplot(x)
+TSdescription(x) 
 \end{Scode}
 
 \code{tfplot} treats each series in the first argument as a panel to be plotted.
@@ -502,38 +710,39 @@ first argument are plotted in separate panels. Series in subsequent time series
 objects will be plotted respectively on the same panels as the first, 
 so the number of series in each object must be the same.
 \begin{Scode}{results=verbatim,fig=TRUE,height=8}
-  tfplot(TSget(c("DMAM1S", "DMAM3S", "DMABMS"), rba),
+tfplot(TSget(c("DMAM1S", "DMAM3S", "DMABMS"), rba),
          TSget(c("DMAM1N", "DMAM3N", "DMABMN"), rba),
     ylab=c("DMAM1", "DMAM3", "DMABM"),
     title="Australian Monetary Aggregates")
 \end{Scode}
 %%
-\subsection{TSzip}
+\subsection{zip}
 %%
-\pkg{TSzip} provides methods for the \pkg{TSdbi} interface, allowing the 
+The \code{zip} interface allows the 
 use of zipped files that can be read by \code{read.table} as if each file is a
 database series (or group of series such as high, low, open, close, for a
 stock). The \code{dbname} is a directory or \code{url}. 
-\pkg{TSzip} does not support writing data to the database. 
+\code{zip} does not support writing data to the database. 
 
 The following retrieves zipped files 
 from \url{http://pitrading.com/free\_market\_data.htm} which 
 provides some end of day data free of charge. 
 \begin{Scode}{results=verbatim,fig=TRUE,height=8}
-  library("TSzip")  
-  pitr <- TSconnect("zip", dbname="http://pitrading.com/free_eod_data")
-  z <- TSget("INDU", pitr)
-  tfplot(z, series=c(1,4))
+library("TSmisc")  
+pitr <- TSconnect("zip", dbname="http://pitrading.com/free_eod_data")
+z <- TSget("INDU", pitr)
+tfplot(z, series=c(1,4))
 \end{Scode}
 
 The following illustrates returning an \code{xts} \citep{xts} time series object.
 \begin{Scode}{results=verbatim,fig=TRUE,height=8}
-  z <- TSget(c("EURUSD", "GBPUSD"), pitr, quote=c("Open","Close"),
-         TSrepresentation=xts)
-  tfplot(z,
-         title="EURUSD and GBPUSD open and closing values from pitrading", 
-         start="1995-01-01",
-         par=list(omi=c(0.1,0.3,0.1,0.1),mar=c(2.1,3.1,1.0,0.1)))
+require("xts")
+z <- TSget(c("EURUSD", "GBPUSD"), pitr, quote=c("Open","Close"),
+       TSrepresentation=xts)
+tfplot(z,
+       title="EURUSD and GBPUSD open and closing values from pitrading", 
+       start="1995-01-01",
+       par=list(omi=c(0.1,0.3,0.1,0.1),mar=c(2.1,3.1,1.0,0.1)))
 \end{Scode}
 
 The default appearance of graphs can be changed (improved) by adjusting graphics 
@@ -576,12 +785,11 @@ tables, which would cause \code{createTSdbTables()} to fail.
 WARNING: running this will overwrite the ``test'' database on your server.
 
 \begin{Scode}
- library("TSMySQL")
- con <- dbConnect("MySQL", dbname="test") 
- require("TSsql")
- removeTSdbTables(con, yesIknowWhatIamDoing=TRUE)
- createTSdbTables(con, index=FALSE)
- dbDisconnect(con)
+setup <- RMySQL::dbConnect(RMySQL::MySQL(), dbname="test")  
+TSsql::removeTSdbTables(setup, yesIknowWhatIamDoing=TRUE)
+TSsql::createTSdbTables(setup, index=FALSE)
+DBI::dbListTables(setup) 
+DBI::dbDisconnect(setup)
 \end{Scode}
 %%
 %%
@@ -597,8 +805,8 @@ other SQL database connections.
 The first thing to do is to establish a \code{TSdbi} connection to the database:
 
 \begin{Scode}{results=hide}
- library("TSMySQL")
- con <- TSconnect("MySQL", dbname="test") 
+library("TSMySQL")
+con <- TSconnect("MySQL", dbname="test") 
 \end{Scode}
 
 \code{TSconnect} uses \code{dbConnect} from the \pkg{DBI} package, but checks that the
@@ -611,11 +819,11 @@ common to all extension packages.
 This puts a series called \code{vec}  on the database and then reads is back
  
 \begin{Scode}
- z <- ts(rnorm(10), start=c(1990,1), frequency=1)
- seriesNames(z) <- "vec"
- if(TSexists("vec", con)) TSdelete("vec", con) 
- TSput( z, con)
- z <- TSget("vec", con)
+z <- ts(rnorm(10), start=c(1990,1), frequency=1)
+seriesNames(z) <- "vec"
+if(TSexists("vec", con)) TSdelete("vec", con) 
+TSput( z, con)
+z <- TSget("vec", con)
 \end{Scode}
 
 Note that the series name(s) and not the \proglang{R} variable name 
@@ -639,22 +847,22 @@ The \proglang{R} variable can contain multiple series of the same frequency.
 They are stored separately on the database.
 
 \begin{Scode}{results=verbatim,fig=TRUE,height=8}
- z <- ts(matrix(rnorm(200),100,2), start=c(1995,1), frequency=12)
-  seriesNames(z) <- c("mat2c1", "mat2c2")
- TSreplace(z, con)
- tfplot(z+1, TSget(c("mat2c1","mat2c2"), con),
-           lty=c("solid", "dashed"), col=c("black", "red"))
+z <- ts(matrix(rnorm(200),100,2), start=c(1995,1), frequency=12)
+ seriesNames(z) <- c("mat2c1", "mat2c2")
+TSreplace(z, con)
+tfplot(z+1, TSget(c("mat2c1","mat2c2"), con),
+	  lty=c("solid", "dashed"), col=c("black", "red"))
 \end{Scode}
  
 The following extract information about the series from the database, although
 not much information has been added for these examples. 
 \begin{Scode}{results=verbatim}
- TSmeta("mat2c1", con)
- TSmeta("vec", con)
- TSdates("vec", con)
- TSdescription("vec", con)
- TSdoc("vec", con)
- TSlabel("vec", con)
+TSmeta("mat2c1", con)
+TSmeta("vec", con)
+TSdates("vec", con)
+TSdescription("vec", con)
+TSdoc("vec", con)
+TSlabel("vec", con)
 \end{Scode}
 
 Data documentation can be in three forms. A description specified by 
@@ -672,20 +880,20 @@ with \code{TSget} only if this is specified with the logical arguments
 database with the functions \code{TSdescription} and \code{TSdoc}.
 
 \begin{Scode}{results=verbatim}
- z <- ts(matrix(rnorm(10),10,1), start=c(1990,1), frequency=1)
- TSreplace(z, serIDs="Series1", con) 
- zz <- TSget("Series1", con)
- TSreplace(z, serIDs="Series1", con, 
-     TSdescription="short rnorm series", 
-     TSdoc="Series created as an example in the vignette.")
- zz <- TSget("Series1", con, TSdescription=TRUE, TSdoc=TRUE)
- start(zz)
- end(zz)
- TSdescription(zz)
- TSdoc(zz)
+z <- ts(matrix(rnorm(10),10,1), start=c(1990,1), frequency=1)
+TSreplace(z, serIDs="Series1", con) 
+zz <- TSget("Series1", con)
+TSreplace(z, serIDs="Series1", con, 
+    TSdescription="short rnorm series", 
+    TSdoc="Series created as an example in the vignette.")
+zz <- TSget("Series1", con, TSdescription=TRUE, TSdoc=TRUE)
+start(zz)
+end(zz)
+TSdescription(zz)
+TSdoc(zz)
 
- TSdescription("Series1", con)
- TSdoc("Series1", con)
+TSdescription("Series1", con)
+TSdoc("Series1", con)
 \end{Scode}
 
 The following examples use dates and times which are not handled by \code{ts},
@@ -695,26 +903,25 @@ determine the periodicity of the data. See Appendix ``B'' for details of the
 specific tables.
 
 \begin{Scode}{results=verbatim,fig=TRUE,height=8}
- require("zoo") 
+require("zoo") 
 
- z <- zoo(matrix(rnorm(200),100,2), as.Date("1990-01-01") + 0:99)
-  seriesNames(z) <- c("zooc1", "zooc2")
- TSreplace(z, con, Table="D")
- tfplot(z+1, TSget(c("zooc1","zooc2"), con),
-           lty=c("solid", "dashed"), col=c("black", "red"))
-  
+z <- zoo(matrix(rnorm(200),100,2), as.Date("1990-01-01") + 0:99)
+ seriesNames(z) <- c("zooc1", "zooc2")
+TSreplace(z, con, Table="D")
+tfplot(z+1, TSget(c("zooc1","zooc2"), con),
+	  lty=c("solid", "dashed"), col=c("black", "red"))
+ 
 \end{Scode}
 
 \begin{Scode}{results=verbatim}
- z <- zoo(matrix(rnorm(200),100,2), as.Date("1990-01-01") + 0:99 * 7)
-  seriesNames(z) <- c("zooWc1", "zooWc2")
- TSreplace(z, con, Table="W")
+z <- zoo(matrix(rnorm(200),100,2), as.Date("1990-01-01") + 0:99 * 7)
+seriesNames(z) <- c("zooWc1", "zooWc2")
+TSreplace(z, con, Table="W")
 \end{Scode}
 
 \begin{Scode}{results=hide}
-  dbDisconnect(con)
-  detach(package:TSMySQL)
-  detach(package:RMySQL)
+dbDisconnect(con)
+detach(package:TSMySQL)
 \end{Scode}
 %%
 \section{More Examples}
@@ -726,7 +933,7 @@ specific tables.
 This section illustrates fetching data from the web  and loading it into the
 database. This would be a very slow way to load a database, but provides
 examples of different kinds of time series data. The fetching is done with 
-\pkg{TShistQuote}.
+\code{histQuote}.
 Fetching data can fail due to lack of an Internet connection or delays, which
 will cause the generation of this vignette to fail. 
 
@@ -734,19 +941,27 @@ This part of the vignette is generated using \pkg{TSPostgreSQL}, but other backe
 servers work in a similar way. See Appendix ``A'' for details of establishing
 other SQL database connections.
 
-First establish a connection to the database where data will be saved:
+First set up the TS database structure on the database where data will be
+saved (if it is not already in place)
+\begin{Scode}{results=verbatim}
+host	<- Sys.getenv("POSTGRES_HOST")
+setup <-  DBI::dbConnect(RPostgreSQL::PostgreSQL(), dbname="test", host=host) 
+TSsql::createTSdbTables(setup)
+DBI::dbDisconnect(setup)
+\end{Scode}
+
+Then establish a TS connection to it:
 \begin{Scode}
-  require("TSPostgreSQL")
-  host    <- Sys.getenv("POSTGRES_HOST")
-  con <-  TSconnect("PostgreSQL", dbname="test", host=host) 
+require("TSPostgreSQL")
+con <-  TSconnect("PostgreSQL", dbname="test", host=host) 
 \end{Scode}
 
 Now connect to the web server and fetch data:
 
 \begin{Scode}{results=verbatim}
-  require("TShistQuote")
-  yahoo <- TSconnect("histQuote", dbname="yahoo") 
-  x <- TSget("^gspc", quote = "Close", con=yahoo)
+require("TSmisc")
+yahoo <- TSconnect("histQuote", dbname="yahoo") 
+x <- TSget("^gspc", quote = "Close", con=yahoo)
 \end{Scode}
 
 Then write the data to the local server, specifying table B for business day 
@@ -754,50 +969,50 @@ data (using TSreplace in case the series
 is already there from running this example previously):
 
 \begin{Scode}{results=verbatim}
-   TSreplace(x,  serIDs="gspc", Table="B", con=con)
+TSreplace(x,  serIDs="gspc", Table="B", con=con)
 \end{Scode}
 
 and check the saved version:
 
 \begin{Scode}{results=verbatim,fig=TRUE}
-  TSrefperiod(TSget(serIDs="gspc", con=con)) 
-  TSdescription("gspc", con=con) 
-  TSdoc("gspc", con=con)
-  tfplot(TSget(serIDs="gspc", con=con))
+TSrefperiod(TSget(serIDs="gspc", con=con)) 
+TSdescription("gspc", con=con) 
+TSdoc("gspc", con=con)
+tfplot(TSget(serIDs="gspc", con=con))
 \end{Scode}
 
 \begin{Scode}{results=verbatim,fig=TRUE,height=8}
-   x <- TSget("ibm", quote = c("Close", "Vol"), con=yahoo)
-   TSreplace(x, serIDs=c("ibm.Cl", "ibm.Vol"),  con=con, Table="B",
-              TSdescription.=c("IBM Close","IBM  Volume"),
-	      TSdoc.= paste(c(
-	         "IBM  Close   retrieved on ",
-		 "IBM  Volume retrieved  on "), Sys.Date()))
+x <- TSget("ibm", quote = c("Close", "Vol"), con=yahoo)
+TSreplace(x, serIDs=c("ibm.Cl", "ibm.Vol"),  con=con, Table="B",
+	   TSdescription.=c("IBM Close","IBM  Volume"),
+     	   TSdoc.= paste(c(
+     	      "IBM  Close   retrieved on ",
+     	      "IBM  Volume retrieved  on "), Sys.Date()))
 
-   z <- TSget(serIDs=c("ibm.Cl", "ibm.Vol"), 
-             TSdescription=TRUE, TSdoc=TRUE, con=con)
-   TSdescription(z)
-   TSdoc(z)
-   tfplot(z, xlab = TSdoc(z), title = TSdescription(z))
-   tfplot(z, title="IBM", start="2007-01-01")
+z <- TSget(serIDs=c("ibm.Cl", "ibm.Vol"), 
+	  TSdescription=TRUE, TSdoc=TRUE, con=con)
+TSdescription(z)
+TSdoc(z)
+tfplot(z, xlab = TSdoc(z), title = TSdescription(z))
+tfplot(z, title="IBM", start="2007-01-01")
 \end{Scode}
 %%
 %% this is causing problems because around July 2012 Yahoo began frequently
 %% having dupicate data on the final day (seems to be partial data for the 
 %% next day?), which causes zoo the complain. Hopefully Yahoo bug will be fixed.
 %%\begin{Scode}{results=verbatim,fig=TRUE,height=8}
-%%  x <- TSget(c("^ftse","^gspc"), con)
-%%  plot(x)
+%%x <- TSget(c("^ftse","^gspc"), con)
+%%plot(x)
 %%\end{Scode}
 %%
 %%\begin{Scode}{results=verbatim,fig=TRUE,height=8}
-%%  tfplot(x)
-%%  TSdescription(x) 
+%%tfplot(x)
+%%TSdescription(x) 
 %%\end{Scode}
 %%
 %%\begin{Scode}{results=verbatim,fig=TRUE}
-%%  x <- TSget("ibm", con, quote = c("Close", "Vol"))
-%%  tfplot(x)
+%%x <- TSget("ibm", con, quote = c("Close", "Vol"))
+%%tfplot(x)
 %%\end{Scode}
 %%
 %%\begin{Scode}{results=verbatim,fig=TRUE,height=8}
@@ -805,11 +1020,11 @@ and check the saved version:
 %%\end{Scode}
 %%
 %%\begin{Scode}{results=verbatim,fig=TRUE}
-%%  tfplot(x, title="IBM", start="2007-01-01")
+%%tfplot(x, title="IBM", start="2007-01-01")
 %%\end{Scode}
 %%
 %%\begin{Scode}{results=verbatim,fig=TRUE}
-%%  tfplot(x, title=TSdoc(x), xlab = TSlabel(x), start="2007-01-01")
+%%tfplot(x, title=TSdoc(x), xlab = TSlabel(x), start="2007-01-01")
 %%\end{Scode}
 
 
@@ -817,26 +1032,25 @@ Oanda has maximum of 500 days, so the start date is specified here so as to
 not exceed that.
 
 \begin{Scode}{results=verbatim}
-   Oanda <- TSconnect("histQuote", dbname="oanda") 
-   x <- TSget("EUR/USD", start=Sys.Date() - 495, con=Oanda)
-   TSreplace(x, serIDs="EUR/USD", Table="D", con=con)
+Oanda <- TSconnect("histQuote", dbname="oanda") 
+x <- TSget("EUR/USD", start=Sys.Date() - 495, con=Oanda)
+TSreplace(x, serIDs="EUR/USD", Table="D", con=con)
 \end{Scode}
 
 Then check the saved version:
 
 \begin{Scode}{results=verbatim,fig=TRUE}
-   z <- TSget(serIDs="EUR/USD",TSlabel=TRUE, 
-                  TSdescription=TRUE,  con=con)
-   tfplot(z, title = TSdescription(z), ylab=TSlabel(z),
-            start="2007-03-01")
+z <- TSget(serIDs="EUR/USD",TSlabel=TRUE, 
+	       TSdescription=TRUE,  con=con)
+tfplot(z, title = TSdescription(z), ylab=TSlabel(z),
+	 start="2007-03-01")
 \end{Scode}
 
 \begin{Scode}{results=hide}
-  dbDisconnect(con)
-  dbDisconnect(yahoo)
-  dbDisconnect(Oanda)
-  detach(package:TSPostgreSQL)
-  detach(package:RPostgreSQL)
+dbDisconnect(con)
+dbDisconnect(yahoo)
+dbDisconnect(Oanda)
+detach(package:TSPostgreSQL)
 \end{Scode}
 %%
 %%
@@ -856,9 +1070,9 @@ Then check the saved version:
 %%%%
 %%%%First, establish a connection to the database, and make it the default.
 %%%%\begin{Scode}{results=verbatim,fig=FALSE}
-%%%%  library("TSMySQL")
-%%%%  ets <-  TSconnect("MySQL", dbname="ets") 
-%%%%  options(TSconnection=ets)
+%%%%library("TSMySQL")
+%%%%ets <-  TSconnect("MySQL", dbname="ets") 
+%%%%options(TSconnection=ets)
 %%%%\end{Scode}
 %%%%
 %%%%Often one needs to check if data is available or has been updated.
@@ -917,7 +1131,6 @@ Then check the saved version:
 %%%%
 %%%%\begin{Scode}
 %%%%  detach(package:TSMySQL)
-%%%%  detach(package:RMySQL)
 %%%%\end{Scode}
 %%
 %%\section{Fancy Graphs with data from several sources}
@@ -945,39 +1158,40 @@ the names are different.)
 The connections are established using other \pkg{TSdbi} packages such as \pkg{TSMySQL}, 
 \pkg{TSPostgreSQL}, etc. It will be necessary to establish two database connections, 
 so it will also be necessary to load the database specific packages. 
-Examples below use \pkg{TShistQuote},  \pkg{TSMySQL} 
+Examples below use \code{histQuote},  \pkg{TSMySQL} 
 and \pkg{TSSQLite}. 
 
 \begin{Scode}
 library("TScompare")  
-library("TShistQuote")  
+library("TSmisc")  
 library("TSMySQL")  
 library("TSSQLite")  
 \end{Scode}
 
 First setup database tables that are used by TSdbi using a \code{dbConnect}
 connection, after which a \code{TSconnect} connection can be used.
-This requires the package \code{TSsql} which does not need to be attached for
+This uses the package \code{TSsql} which does not need to be attached for
 most purposes, but is needed for the initial setup and for removing \code{TSdbi}
 database tables (which destroys the structure \code{TSconnect} expects).
 When this is re-done it insure the databases are empty: 
 \begin{Scode}{results=hide}
- con <- dbConnect("MySQL", dbname="test") 
- require("TSsql")
- removeTSdbTables(con, yesIknowWhatIamDoing=TRUE)
- createTSdbTables(con, index=FALSE)
- dbDisconnect(con)
+setup <- RMySQL::dbConnect(RMySQL::MySQL(), dbname="test")  
+TSsql::removeTSdbTables(setup, yesIknowWhatIamDoing=TRUE)
+TSsql::createTSdbTables(setup, index=FALSE)
+DBI::dbListTables(setup) 
+DBI::dbDisconnect(setup)
 
- con <- dbConnect("SQLite", dbname="test") 
- removeTSdbTables(con, yesIknowWhatIamDoing=TRUE)
- createTSdbTables(con, index=FALSE)
- dbDisconnect(con)
+setup <- RSQLite::dbConnect(RSQLite::SQLite(), dbname="test")  
+TSsql::removeTSdbTables(setup, yesIknowWhatIamDoing=TRUE)
+TSsql::createTSdbTables(setup, index=FALSE)
+DBI::dbListTables(setup) 
+DBI::dbDisconnect(setup)
 \end{Scode}
 
 Now TS connections to the databases are established.
 \begin{Scode}{results=hide}
-  con1 <- TSconnect("MySQL", dbname="test")
-  con2 <- TSconnect("SQLite", dbname="test") 
+con1 <- TSconnect("MySQL", dbname="test")
+con2 <- TSconnect("SQLite", dbname="test") 
 \end{Scode} 
 
 Next a connection to yahoo is used to get some series and write them to the 
@@ -985,63 +1199,61 @@ local test database. \code{TSreplace} is used because \code{TSput}
 will fail if the series already exisits.
 
 \begin{Scode}{results=verbatim}
-  yahoo <- TSconnect("histQuote", dbname="yahoo") 
-  x <- TSget("^ftse", yahoo)
-  TSreplace(x, serIDs="ftse", Table="B", con=con1)
-  TSreplace(x, serIDs="ftse", Table="B", con=con2)
+yahoo <- TSconnect("histQuote", dbname="yahoo") 
+x <- TSget("^ftse", yahoo)
+TSreplace(x, serIDs="ftse", Table="B", con=con1)
+TSreplace(x, serIDs="ftse", Table="B", con=con2)
 
-  x <- TSget("^gspc", yahoo)
-  TSreplace(x,  serIDs="gspc", Table="B", con=con1)
-  TSreplace(x,  serIDs="gspc", Table="B", con=con2)
+x <- TSget("^gspc", yahoo)
+TSreplace(x,  serIDs="gspc", Table="B", con=con1)
+TSreplace(x,  serIDs="gspc", Table="B", con=con2)
 
-  x <- TSget("ibm", con=yahoo, quote = c("Close", "Vol"))
-  TSreplace(x, serIDs=c("ibmClose", "ibmVol"), Table="B", con=con1)
-  TSreplace(x, serIDs=c("ibmC",     "ibmV"),   Table="B", con=con2)
+x <- TSget("ibm", con=yahoo, quote = c("Close", "Vol"))
+TSreplace(x, serIDs=c("ibmClose", "ibmVol"), Table="B", con=con1)
+TSreplace(x, serIDs=c("ibmC",	  "ibmV"),   Table="B", con=con2)
 \end{Scode}
 
 Now to do a comparison:
 \begin{Scode}{results=verbatim}
-  ids <- AllIds(con1)
-  ids
+ids <- AllIds(con1)
+ids
 \end{Scode}
 
 If the second database has the same names then ids can be made into a 
 matrix with identical columns. 
 
 \begin{Scode}{results=verbatim}
-  ids <- cbind(ids, ids)
+ids <- cbind(ids, ids)
 
-  eq   <- TScompare(ids, con1, con2, na.rm=FALSE)
-  summary(eq)
+eq   <- TScompare(ids, con1, con2, na.rm=FALSE)
+summary(eq)
 
-  eqrm <- TScompare(ids, con1, con2, na.rm=TRUE)
-  summary(eqrm)
+eqrm <- TScompare(ids, con1, con2, na.rm=TRUE)
+summary(eqrm)
 \end{Scode}
 
 Since names are not identical the above indicates discrepancies, which 
 are resolves by indicating the corresponding name pairs:
 \begin{Scode}{results=verbatim}
-  ids <- matrix(c("ftse","gspc","ibmClose", "ibmVol",
-                  "ftse","gspc","ibmC", "ibmV"),4,2)
+ids <- matrix(c("ftse","gspc","ibmClose", "ibmVol",
+		"ftse","gspc","ibmC", "ibmV"),4,2)
 
-  ids
-  eq   <- TScompare(ids, con1, con2, na.rm=FALSE)
-  summary(eq)
+ids
+eq   <- TScompare(ids, con1, con2, na.rm=FALSE)
+summary(eq)
 
-  eqrm <- TScompare(ids, con1, con2, na.rm=TRUE)
-  summary(eqrm)
+eqrm <- TScompare(ids, con1, con2, na.rm=TRUE)
+summary(eqrm)
 \end{Scode}
 
 While it may not be necessary to \code{detach} packages, the following prevents
 warnings later about objects being masked:
 \begin{Scode}
-  dbDisconnect(con1)
-  dbDisconnect(con2)
-  dbDisconnect(yahoo)
-  detach(package:TSMySQL)
-  detach(package:RMySQL)
-  detach(package:TSSQLite)
-  detach(package:RSQLite)
+dbDisconnect(con1)
+dbDisconnect(con2)
+dbDisconnect(yahoo)
+detach(package:TSMySQL)
+detach(package:TSSQLite)
 \end{Scode}
 %%
 %%
@@ -1102,14 +1314,14 @@ with names like ``etsmfacansim\_20110513.db''. Then the vintages can be accessed
 as follows:
 
 \begin{Scode}{eval=FALSE}
-  dbs <- paste("ets /path/to/etsmfacansim_", c(
-             "20110513.db", "20060526.db", "20110520.db"), sep="")
-  names(dbs) <- c("2011-05-13", "2006-05-26", "2011-05-20")
-	     
-  conetsV <-TSconnect("fame", dbname=dbs, "read", current="2011-05-13")
+dbs <- paste("ets /path/to/etsmfacansim_", c(
+	   "20110513.db", "20060526.db", "20110520.db"), sep="")
+names(dbs) <- c("2011-05-13", "2006-05-26", "2011-05-20")
+           
+conetsV <-TSconnect("fame", dbname=dbs, "read", current="2011-05-13")
 
-  z <- TSget("V122646", con=conetsV, vintage=c("2011-05-13", "2006-05-26"))
-  dbDisconnect(conetsV)
+z <- TSget("V122646", con=conetsV, vintage=c("2011-05-13", "2006-05-26"))
+dbDisconnect(conetsV)
 \end{Scode}
 
 (The above example should work, but beware that I am no longer testing it
@@ -1134,9 +1346,8 @@ Pointing your mouse at the legend of this plot will highlight the corresponding
 vintage, and
 pointing at the graph will give information about the source of a data point.
 \begin{Scode}{eval=FALSE,fig=FALSE}
-  dbDisconnect(ets)
-  detach(package:TSMySQL)
-  detach(package:RMySQL)
+dbDisconnect(ets)
+detach(package:TSMySQL)
 \end{Scode}
 %%
 %%
@@ -1157,26 +1368,42 @@ The starting point will be to get some data. Previous sections illustrate
 several possibilities. For example purposes here use
 
 \begin{Scode}{fig=FALSE}
- require("TSjson")
- cansim <- TSconnect("json", dbname="cansim")
- z <- TSget(c("V36415","V122707","V122746"),  con=cansim)
- seriesNames(z) <- c("Total", "Consumer", "ResMort")
+library("TSsdmx") 
+ 
+# RJSDMX::sdmxHelp()  # can be useful for finding series identifiers, etc
+
+oecd <- TSconnect("sdmx", dbname="OECD")
+
+x <- TSget('QNA.CAN|MEX|USA|.PPPGDP.CARSA.Q', oecd)
+
 \end{Scode}
+
+%% cansim <- TSconnect("json", dbname="cansim")
+%% x <- TSget(c("V36415","V122707","V122746"),  con=cansim)
+%% seriesNames(x) <- c("Total", "Consumer", "ResMort")
+%% library("tfplot")
+%% tfplot(x, title="Canadian Household Debt")
 
 While this is optional, it might be useful to look at the data to see if it is
 really what you expect:
 
 \begin{Scode}{fig=TRUE,width=7.0,height=12}
- library("tframePlus")
- library("tfplot")
- tfplot(z, title="Canadian Household Debt")
+library("tframePlus")
+library("tfplot")
+
+tfplot(x, title="Nominal GDP at PPP? (relative to US)", 
+         subtitle=paste(c("Canada","Mexico","US"),"quarterly national accounts, SAAR"),
+	 ylab=rep("guess the units",3))
 \end{Scode}
 
-In this case the dates of one series start in 1956, but data is NA until
-about 1970. It is possible to trim the \code{NA} data from the beginning with
+If the data in one series starts at a different time then \code{z} will be filled
+with \code{NA} for missing points. 
+It is possible to trim the \code{NA} data from the beginning with 
 
-\begin{Scode}{fig=FALSE}
- z <- trimNA(z, endNAs=FALSE)
+\begin{Scode}{results=verbatim,fig=FALSE}
+start(x)
+x <- trimNA(x, endNAs=FALSE)
+start(x)
 \end{Scode}
 
 By default, \code{trimNA} will trim all series if any one of them is \code{NA},
@@ -1186,17 +1413,17 @@ most recent data. Setting \code{endNAs=FALSE)} overrides the default.
 It is also possible to trim the data to a specified subsample with
 
 \begin{Scode}{fig=FALSE}
- z <- tfwindow(z, start=c(1995,1))
+x <- tfwindow(x, start=c(1995,1))
 \end{Scode}
 
 Now write the data to an .xls file using \code{TSwriteXLS} which uses 
 \code{WriteXLS} \citep{WriteXLS} but automatically adds time information:
 
 \begin{Scode}{fig=FALSE}
- library("WriteXLS")
- tofile <- tempfile(fileext = ".xls")
- TSwriteXLS(z, FileName=tofile)
- unlink(tofile) 
+library("WriteXLS")
+tofile <- tempfile(fileext = ".xls")
+TSwriteXLS(x, FileName=tofile)
+unlink(tofile) 
 \end{Scode}
 
 In this case a temporary file is written, then removed with \code{unlink}, so
@@ -1218,656 +1445,13 @@ case.
 To write the data to a .csv file
 
 \begin{Scode}{fig=FALSE}
- tofile <- tempfile(fileext = ".csv")
- TSwriteCSV(z, FileName=tofile)
- unlink(tofile) 
+tofile <- tempfile(fileext = ".csv")
+TSwriteCSV(x, FileName=tofile)
+unlink(tofile) 
 \end{Scode}
 %%
 %%
 %%
-\section{Appendix A: Connection Specific Details}
-\label{appdx:A}
-%%
-This appendix provides details of the different connections which are specific to
-individual packages and backend databases. In order to make the examples
-complete, for the SQL versions, test databases are first created with 
-the tables expected by the 
-\pkg{TS*} packages. Note that this is done with a \code{dbConnect} connection
-rather than a \code{TSconnect} connection, because \code{TSconnect} expects
-the tables to exist already.
-
-WARNING: running these example will overwrite tables in the
-``test'' database on the server.
-
-
-The database setup might typically be done by an administrator, rather than 
-by an end user. Here it is done using a function \code{createTSdbTables} 
-in the \pkg{TSsql} package. 
-The instructions for building the database tables can be seen by examining
-that function. The instruction could be used to build the database
-using database utilites rather than \proglang{R}, which might be the way a
-system administrator would build the database.
-
-In many cases there are two or more ways to pass information like the 
-\code{username}, \code{password}, and \code{server} or \code{host}. One
-mechanism is that this information is specified in a configuration file in the
-user's home directory. The database driver then reads this information and it is
-not part of the user's \proglang{R} session. 
-(Often this is considered the most secure way.) 
-Another way is that environment variables are set, and the database driver uses
-these. Again, this is not part of the user's R session.
-Still another way is that the user passes this information in the call to
-\code{TSconnect} in their \proglang{R} session. In this case the character strings are
-visible in the R session, and possibly recorded in the user's R scripts, thus
-this is typically not considered to be very secure. A modification, which is only
-a little bit better, is for the user's \proglang{R} scripts to read the information from
-environment variables using, for example:  
-\begin{Scode}
-   user <- Sys.getenv("MYSQL_USER")
-\end{Scode}
-   
-%%
-\subsection{TSMySQL Connection Details}
-%%
-The MySQL  user, password, and hostname should be set in MySQL client
-configuration file (.my.cnf) in the user's home directory before starting R. 
-Alternatively, this information can be set with
-environment variables  MYSQL\_USER, MYSQL\_PASSWD and MYSQL\_HOST.
-(An environment variable MYSQL\_DATABASE can also be set, but ``test'' is
-specified below.) Below the configuration file is used.
-
-The next small section of code uses \code{dbConnect} to set up database 
-tables that expected by \code{TSconnect}. 
-%%
-\begin{Scode}{results=hide}
- library("TSMySQL")
- con <-  dbConnect("MySQL", dbname="test") 
- require("TSsql")
- removeTSdbTables(con, yesIknowWhatIamDoing=TRUE)
- createTSdbTables(con, index=FALSE)
- dbDisconnect(con)
-\end{Scode}
-
-Now a TSdbi connection to the database is established.
-\begin{Scode}{results=hide}
-  con  <-  TSconnect("MySQL", dbname="test")
-\end{Scode} 
-
-The alternative to pass the user/password information in the arguments to
-the connection function would be:
-\begin{Scode}{results=hide,eval=FALSE}
-con <-  TSconnect("MySQL", dbname="test", username=user, password=passwd, host=host)
-\end{Scode} 
-
-This may be cumbersome to change, and is generally considered to be less secure.
-
-While it may not be necessary to \code{detach} packages, the following prevents
-warnings later about objects being masked:
-\begin{Scode}
-  detach(package:TSMySQL)
-  detach(package:RMySQL)
-\end{Scode}
-%%
-%%
-\subsection{TSPostgreSQL Connection Details}
-%%
-The PostgreSQL  user, and password, can be set in PostgreSQL 
-configuration file (.pgpass in Linux) in the user's home directory before 
-starting R. 
-The Postgress documentation suggests that it should be
-possible to get the host from the .pgpass file too, but I have not been able
-to make that work. The PostgreSQL alternative to the configuration file
-is to use environment variables PGDATABASE, PGHOST, PGPORT, and PGUSER.
-This package supports another alternatively to set this information 
-with environment variables  POSTGRES\_USER, POSTGRES\_PASSWD 
-and POSTGRES\_HOST, which are read in the R code.
-(An environment variable POSTGRES\_DATABASE can also be set, but ``test'' is
-specified below.)  Below, the environment variable POSTGRES\_HOST is used to
-determine the host server, but the .pgpass file is used for the user and 
-password information.
-
-\begin{Scode}
-   host    <- Sys.getenv("POSTGRES_HOST")
-\end{Scode}
-
-The next small section of code uses \code{dbConnect} to set up database 
-tables that expected by \code{TSconnect}. 
-%%
-\begin{Scode}{results=hide}
- library("TSPostgreSQL")
- con  <- dbConnect("PostgreSQL", dbname="test", host=host)
- require("TSsql")
- removeTSdbTables(con, yesIknowWhatIamDoing=TRUE)
- createTSdbTables(con, index=FALSE)
- dbDisconnect(con)
-\end{Scode}
-
-Now a TSdbi connection to the database is established.
-\begin{Scode}{results=hide}
-  con  <-  TSconnect("PostgreSQL", dbname="test", host=host)
-\end{Scode} 
-
-Another alternative is to pass the user/password information in the arguments to
-the connection function:
-\begin{Scode}{results=hide,eval=FALSE}
-  con <-  TSconnect("PostgreSQL", dbname="test", user=user, password=passwd, host=host)
-\end{Scode} 
-
-This is may be cumbersome to change, and is generally considered to be less
-secure.
-
-While it may not be necessary to \code{detach} packages, the following prevents
-warnings later about objects being masked:
-\begin{Scode}
-  detach(package:TSPostgreSQL)
-  detach(package:RPostgreSQL)
-\end{Scode}
-%%
-%%
-%%
-\subsection{TSSQLite Connection Details}
-%%
-In SQLite  there does not seem to be any need to set user or password 
-information, and examples here all use the localhost.
-
-Now setup database tables that are used by TSdbi using a \code{dbConnect}
-connection, after which a \code{TSconnect} connection can be used: 
-\begin{Scode}{results=hide}
- library("TSSQLite")
- con <- dbConnect("SQLite", dbname="test") 
- require("TSsql")
- removeTSdbTables(con, yesIknowWhatIamDoing=TRUE)
- createTSdbTables(con, index=FALSE)
- dbDisconnect(con)
-\end{Scode}
-
-Now a TSdbi connection to the database is established.
-\begin{Scode}{results=hide}
-  con  <-  TSconnect("SQLite", dbname="test")
-\end{Scode} 
-
-While it may not be necessary to \code{detach} packages, the following prevents
-warnings later about objects being masked:
-\begin{Scode}
-  detach(package:TSSQLite)
-  detach(package:RSQLite)
-\end{Scode}
-%%
-%%
-%%
-\subsection{TSodbc Connection Details}
-%%
-The ODBC  user, password, hostname, etc, should be set in ODBC client
-configuration file in the user's home directory (.odbc.ini in Linux) 
-before starting R. An example of this file is provided below. It will also
-be necessary to have the appropriate driver installed on the system
-(Postgresql in the example below).
-Alternatively, it should be possible to set this information with
-environment variables  ODBC\_USER, ODBC\_PASSWD and ODBC\_DATABASE. 
-However, the 
-variable ODBC\_HOST does not seem to work for passing the ODBC connection, 
-so a properly setup ODBC configuration file is needed.  Because of this, the
-environment variable mechanism is not currently supported in \pkg{TSodbc}
-and the user, passwd, and host settings should be done in the configuration file.
-
-Now setup database tables that are used by TSdbi using a \code{odbcConnect}
-connection, after which a \code{TSconnect} connection can be used: 
-%%
-\begin{Scode}{results=hide}
- library("TSodbc")
- con <-  odbcConnect(dsn="test") 
- if(con == -1) stop("error establishing ODBC connection.") 
- require("TSsql")
- removeTSdbTables(con, yesIknowWhatIamDoing=TRUE)
- createTSdbTables(con, index=FALSE)
- odbcClose(channel=con)
-\end{Scode}
-
-Now a TSdbi connection to the database is established.
-\begin{Scode}{results=hide}
-  con  <-  TSconnect("ODBC", dbname="test")
-\end{Scode} 
-
-Another alternative is to pass the user/password information in the arguments to
-the connection function:
-\begin{Scode}{results=hide,eval=FALSE}
-con  <-  TSconnect("ODBC", dbname="test", uid=user, pwd=passwd)
-\end{Scode} 
-
-This is may be cumbersome to change, and is generally considered to be less
-secure.
-
-
-While it may not be necessary to \code{detach} packages, the following prevents
-warnings later about objects being masked:
-\begin{Scode}
-  detach(package:TSodbc)
-  detach(package:RODBC)
-\end{Scode}
-%%
-%%
-\subsubsection{Example ODBC configuration file}
-%%
-Following is an example ODBC configuration file I use in Linux (so the file is
-in my home directory and called  ``.odbc.ini'') to connect to a remote
-PostgreSQL server:
-
-\begin{verbatim}
-[test]
-
-Description             = test DB (Postgresql)
-Driver                  = Postgresql
-Trace                   = No
-TraceFile               = /tmp/test_odbc.log
-Database                = test
-Servername              = some.host
-UserName                = paul
-Password                = mySecret
-Port                    = 5432
-Protocol                = 6.4
-ReadOnly                = No
-RowVersioning           = No
-ShowSystemTables        = No
-ShowOidColumn           = No
-FakeOidIndex            = No
-ConnSettings            =
-
-
-[ets]
-
-Description             = ets DB (Postgresql)
-Driver                  = Postgresql
-Trace                   = No
-TraceFile               = /tmp/test_odbc.log
-Database                = ets
-Servername              = some.host
-UserName                = paul
-Password                = mySecret
-Port                    = 5432
-Protocol                = 6.4
-ReadOnly                = No
-RowVersioning           = No
-ShowSystemTables        = No
-ShowOidColumn           = No
-FakeOidIndex            = No
-ConnSettings            =
-\end{verbatim}
-
-The above depends on the driver tag ``Postgresql'' being defined in the
-file /etc/odbcinst.ini, to give the actual driver file location. That file might
-have something like
-
-\begin{verbatim}
-[PostgreSQL]
-Description		= PostgreSQL ODBC driver (Unicode version)
-Driver          = /usr/lib/x86_64-linux-gnu/odbc/psqlodbcw.so
-Setup           = /usr/lib/x86_64-linux-gnu/odbc/libodbcpsqlS.so
-Debug		= 0
-CommLog		= 1
-UsageCount	= 1
-\end{verbatim}
-
-%%
-%%
-\subsection{TSOracle Connection Details}
-%%
-
-This package is available on R-forge, but is not being tested, because I do not
-currently have a server to test it. 
-The code in this section of the vignette is not being run.
-Please contact the package maintainer (Paul Gilbert) if 
-you have an Oracle server and are willing to test the package.
-
-The Oracle  user, password, and hostname should be set in Oracle client
-configuration file (tnsnames.ora) before starting R. 
-
-The next small section of code uses \code{dbConnect} to set up database 
-tables that expected by \code{TSconnect}. 
-%%
-\begin{Scode}{eval=FALSE}
- library("TSOracle")
- con  <- dbConnect("Oracle", dbname="test") 
- require("TSsql")
- removeTSdbTables(con, yesIknowWhatIamDoing=TRUE)
- createTSdbTables(con, index=FALSE)
- dbDisconnect(con)
-\end{Scode}
-
-
-Now a TSdbi connection to the database is established.
-\begin{Scode}{eval=FALSE}
-  con  <-  TSconnect("Oracle", dbname="test")
-\end{Scode} 
-
-While it may not be necessary to \code{detach} packages, the following prevents
-warnings later about objects being masked:
-\begin{Scode}{eval=FALSE}
-  detach(package:TSOracle)
-  detach(package:ROracle)
-\end{Scode}
-%%
-%%
-%%
-\subsection{TSjson Connection Details}
-\label{appdx:TSjson}
-%%
-The \code{TSjson} method \code{TSconnect} can establish a connection to a
-proxy server. (See the main text for directly connecting to the web data source.)
-\begin{Scode}{eval=FALSE}
- library("TSjson")
- con  <-  TSconnect("TSjson", dbname="proxy-cansim")
-\end{Scode} 
-
-The \code{dbname}  specifies the proxy server, for which credentials will be
-needed.
-The \code{user}, \code{password}, and \code{host}, can be specified as 
-arguments. If specified as \code{NULL} (the default) then they will be 
-determined by reading a file \code{~/.TSjson.cfg} which should have a
-line with four fields: 
-
-[proxy-cansim] user  password  host
-
-The first field should match the \code{dbname} specification.
-Currently only a single line is supported, starting with "[proxy-cansim]", 
-but the format is intended for extension to support proxies to 
-different web databases. 
-
-If the file does not exist then environment variables "TSJSONUSER", 
-"TSJSONPASSWORD", and "TSJSONHOST" will be used.
-
-\begin{Scode}{eval=FALSE}
-  detach(package:TSjson)
-  detach(package:RJSONIO)
-\end{Scode}
-%%
-%%
-%%
-\subsection{TSfame Connection Details}
-%%
-I no longer have access to Fame so package \pkg{TSfame} is no longer being
-extensively tested. (It has previously worked.)
-The code in this section of the vignette is not being run.
-Please contact the package maintainer (Paul Gilbert) if 
-you have Fame and are willing to test the package.
-
-Beware that the package \pkg{fame} may be installed but not functional 
-because the Fame HLI code is not available. 
-A warning will be issued in this case.
-
-Two variants of the Fame connect are available. The first requires a Fame
-database available on the local system:
-\begin{Scode}{eval=FALSE}
-  con <- TSconnect("fame", dbname="testFame.db") 
-\end{Scode}
-
-The second requires a Fame server:
-\begin{Scode}{eval=FALSE}
-  con <- TSconnect("fame", dbname="ets /path/to/etsmfacansim.db", "read") 
-\end{Scode}
-where the characters before the space in the dbname string indicate the network
-name of the server, and the path after the string indicates where the server
-should find the database.
-
-While it may not be necessary to \code{detach} packages, the following prevents
-warnings later about objects being masked:
-\begin{Scode}{eval=FALSE}
-  detach(package:TSfame)
-  detach(package:fame)
-\end{Scode}
-%%
-%%
-%%
-\section{Appendix B: Underlying SQL Database Structure and Loading Data}
-\label{appdx:B}
-%%
-More detailed description of the
-instructions for building the database tables is given in the vignette 
-for the \pkg{TSdbi} package. Those instruction show how to build the database
-using database utilites rather than R, which might be the way a
-system administrator would build the database.
-
-The database tables are shown in the Table below.
-The \textsl{Meta} table is used for storing meta data about series, such as a
-description and longer documentation, and also
-includes an indication of what table the series data is stored in. To retrieve
-series it is not necessary to know which table the series is in, since this can
-be found on the \textsl{Meta} table. Putting data on the database may require 
-specifying the table, 
-if it cannot be determined from the R representation of the series.
-
-\begin{table}
-\caption{Data Tables}
-\label{tab:tables}
-\begin{center}
-\begin{tabular}{ll}
-\hline
-Table & Contents \\
-\hline
-Meta  & meta data and index to series data tables \\
-A     & annual data \\
-Q     & quarterly data \\
-M     & monthly data \\
-S     & semiannual data \\
-W     & weekly data \\
-D     & daily data \\
-B     & business data \\
-U     & minutely data \\
-I     & irregular data with a date \\
-T     & irregular data with a date and time \\
-\hline
-\end{tabular}
-\end{center}
-\end{table}
-
-In addition, there will be tables ''vintages'' and ''panels'' if those features
-are used.
-
-The following is done with dbConnect in place of a TSconnect, since they
-are direct SQL queries and do not require the TSdbi structure.
-
-The structure reported reflects the setup that was done previously.
-These queries are Mysql specific but below is a generic SQL way to do this.
-
-\begin{Scode}{results=verbatim}
- library("TSMySQL")
- con <- dbConnect("MySQL", dbname="test")
- dbListTables(con)
- dbGetQuery(con, "show tables;")
- dbGetQuery(con, "describe A;")
- dbGetQuery(con, "describe B;")
- dbGetQuery(con, "describe D;")
- dbGetQuery(con, "describe M;")
- dbGetQuery(con, "describe Meta;")
- dbGetQuery(con, "describe U;")
- dbGetQuery(con, "describe Q;")
- dbGetQuery(con, "describe S;")
- dbGetQuery(con, "describe W;")
-\end{Scode}
-
-If schema queries  are supported then table information can be obtained in a
-(almost) generic SQL way. On some systems this will fail because users
-do not have read priveleges on the INFORMATION\_SCHEMA table. This does not seem
-to be an issue in SQLite, but SQLite schema queries are not the same as for
-other SQL engines.
-
-\begin{Scode}{results=verbatim}
-  dbGetQuery(con, paste(
-       "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.Columns ",
-       " WHERE TABLE_SCHEMA='test' AND table_name='A' ;")) 
-
-  dbGetQuery(con, paste(
-       "SELECT COLUMN_NAME, COLUMN_DEFAULT, COLLATION_NAME, DATA_TYPE,",
-       "CHARACTER_SET_NAME, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION",
- "FROM INFORMATION_SCHEMA.Columns WHERE TABLE_SCHEMA='test' AND table_name='A' ;"))
-
-  dbGetQuery(con, paste(
-   "SELECT COLUMN_NAME, DATA_TYPE, CHARACTER_MAXIMUM_LENGTH, NUMERIC_PRECISION",
- "FROM INFORMATION_SCHEMA.Columns WHERE TABLE_SCHEMA='test' AND table_name='M';"))
-
-  dbDisconnect(con)
-\end{Scode}
-
-%%
-%%
-%%
-\section{Appendix C: Examples Using DBI and direct SQL Queries}
-\label{appdx:C}
-%%
-The following examples are queries using the underlying "DBI" functions.
-They should not often be needed to access time series, but may be useful
-to get at more detailed information, or formulate special queries. Typically
-these queries may be more useful for systems administrators doing database 
-maintenance than they are for end users.
-
-These queries depend on the underlying structure of the database, which should be
-considered ``opague'' from the perspective of a TSdbi user. That is, this structure
-could be changed without affecting the TSdbi functionality, but the following
-queries would be affected.
-
-\begin{Scode}{results=verbatim}
- library("TSMySQL")
- con <- TSconnect("MySQL", dbname="test") 
- dbGetQuery(con, "SELECT count(*) FROM Meta ;") 
- dbGetQuery(con, "SELECT max(year) FROM A ;") 
-\end{Scode}
-
-Finally, to disconnect gracefully, one should
-\begin{Scode}{results=hide}
-dbDisconnect(con)
-\end{Scode}
-%%
-%%
-\section{Appendix D: TSjson README regarding Python details }
-\label{appdx:D}
-%%
-\begin{verbatim}
-Package TSjson needs Python 2 and Python modules sys, json, mechanize,
-re, csv, and urllib2. The package has been tested with python 2.7.3 on
-Ubuntu Linux and Windows XP. There is no obvious reason why it should not
-work on other systems. (Please advise the package maintainer, Paul 
-Gilbert <pgilbert.ttv9z@ncf.ca> if you discover differently.) The python code
-is fairly simple and may work in Python 3 versions but module mechanize,
-which does the main part that cannot be done easily in R, is not available
-for Python 3. (Also, module urllib2 is split into urllib.request and 
-urllib.error in Python 3.)
-
-Python also needs to be on the path so that it can be found when run from
-the R process. Some brief instructions are provided below, but installing 
-programs will be operating system dependent, so these are not comprehensive.
-
-Instructions for installing python modules are further below.
-
-Probably not necessary for using this package, but for those interested, 
-additional information and turorials on python are available at 
-https://wiki.python.org/moin/FrontPage
-
-
-=========== Windows =====================
-
-On Windows, python can be installed by dowloading and following intructions at
-http://www.python.org/getit/
-
-Python also needs to be on the search PATH. Setting the PATH will be 
-slightly different on different versions of Windows. (See, for example, 
- http://www.computerhope.com/issues/ch000549.htm )
-
-The steps will be roughly: 
-  -From Desktop or Start Menu, right-click My Computer and then Properties.
-  -In the System Properties window, click the Advanced tab.
-  -In the Advanced section, click the Environment Variables button.
-  -In the Environment Variables window, highlight the Path variable 
-  in the Systems Variable section and click the Edit button. Modify 
-  the path to indicate the location where python is installed. (Directories
-  in the Path are separated with a semicolon.)
-
-There should typically be a part of this environment variable string that is 
-something like  C:\Python27;  but the exact string will depend
-on the version and where it has been installed.
-
-You can check that it is being found and the version by executing
-
- python --version
-
-at a Command Prompt. (Be sure to open this window after you set the path
-as above.)
-
-=========== Linux =====================
-
-Python is usually already installed on Linux systems. (Your system is likely
-badly broken if it is not.) You can check the version by executing
-
- python --version
-
-in a shell. If the command is not found then you need to ensure that python is
-on your PATH. If it is not installed then the install can be done with the 
-usual system utilities. For example, on Debian based systems
-
-  sudo apt-get python
-
-or you can install it from http://www.python.org/getit/. (But it really is 
-unlikely that you will need to install python. Also, I do not think that it 
-should be necessary to upgrade or change the version of Python to use the 
- package, and I do not recommend that, because too many other things on 
-your system depend on python.)
-
-
-=========== Python modules =====================
-
-Modules sys, re, csv, json, and urllib2 are provided with the Python Standard
-Library so they will usually not need to be installed. Module mechanize will
-usually need to be installed.
-
-You can check if python modules are already installed by starting python in a
-shell or in Windows at the Command Prompt:
-
-  python
-
-and then at the python >>> prompt try to import the modules. (Python newbies
-beware that indentation is part of the python syntax and you should not put
-spaces at the beginning of the command.)
-
->>> import sys, json, re, csv, urllib2
->>> import mechanize
-
-then 
-
->>> quit()
-
-to exit python.
- 
-Installing modules can be done in a number of different ways, for example,
-using apt-get or Synaptic in some versions of Linux. The use of the python 
-program easy_install is described briefly below. Once the program easy_install 
-is installed  (see https://wiki.python.org/moin/EasyInstall, or in debian based
-systems sudo apt-get install python-setuptools), the process for 
-installing python modules is similar on different operating systems. 
-
-The easy_install program also needs to be found on your path, so add its 
-location in the same way that you added python to your path above. (In Windows, 
-easy_install.exe might be installed in C:\Python27\Scripts, in which case that
-should be on your path.)
-
-Then (in non-Windows systems you may need to prefix this with sudo)
-
- easy_install mechanize
- 
-
-=========== Other data sites =====================
-
-With python and modules installed you should be able to access data from
-Statistics Canada directly from you R session. The python code that makes this
-work is distributed with the source TSjson package in the file
-exec/cansimGet.py. That code can also be executed directly as a python program.
-
-The main reason for using python rather than doing this directly in R is that
-the initial query to the web site returns a link to a dynamically generated
-web page, which must be accessed in a second step. The python module mechanize 
-provides a mechanism to do this, whereas there is currently no easy
-mechanism in R.
-
-Other sites will be added over time, and you can help by sending the package 
-maintainer the details of accesss to other sites that are of interest to you.
-\end{verbatim}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \bibliographystyle{apalike}
