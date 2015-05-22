@@ -1,6 +1,6 @@
-155108be064c908775b900d44f41a413 *DESCRIPTION
+22fd3ad07cb885a8687b4820b033ba37 *DESCRIPTION
 d41d8cd98f00b204e9800998ecf8427e *NAMESPACE
-3d1d679ff6371c0bf2ffe348c2444df6 *NEWS
+5bacfafcb92839c466e42eddd5f0c593 *NEWS
 e9a066ec39c646d61e305d8928a44ae0 *build/vignette.rds
 23bbc061d88c3c9283f5ce128bc7f9df *inst/doc/Guide.Stex
 f6887a70d85b63a2ba5d55edb4facbaf *inst/doc/Guide.bib
@@ -9,7 +9,7 @@ da1893337e8376ec3eb743e509922da4 *inst/doc/Guide.pdf
 0b7d0a8ab79c15d3caf7fa17110ba9b9 *inst/doc/GuideAppendix.pdf
 489335f9adb107a450a2805e7f4714b9 *inst/doc/GuideDevel.Stex
 d6ed2162fd64c0c2de347ffff4e4a828 *inst/doc/GuideDevel.pdf
-591ecf77dd621bb7be1a42383e2060c3 *tests/namespaces.R
+591ecf77dd621bb7be1a42383e2060c3 *inst/testWithAllServers/namespaces.R
 b23d841560754948b77e90600afb2c42 *vignettes/Guide.Stex
 f6887a70d85b63a2ba5d55edb4facbaf *vignettes/Guide.bib
 871752005f32707eecb50412b15de529 *vignettes/GuideAppendix.Stex

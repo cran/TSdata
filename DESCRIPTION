@@ -1,5 +1,5 @@
 Package: TSdata
-Version: 2015.4-1
+Version: 2015.4-2
 Title: 'TSdbi' Illustration
 Description: Illustrates the various 'TSdbi' packages with a vignette using time series 
 	data from several sources. The vignette also illustrates some simple time series
@@ -17,6 +17,6 @@ Author: Paul Gilbert <pgilbert.ttv9z@ncf.ca>
 Maintainer: Paul Gilbert <pgilbert.ttv9z@ncf.ca>
 URL: http://tsdbi.r-forge.r-project.org/
 NeedsCompilation: no
-Packaged: 2015-05-01 00:12:58 UTC; paul
+Packaged: 2015-05-22 15:31:29 UTC; paul
 Repository: CRAN
-Date/Publication: 2015-05-01 09:28:16
+Date/Publication: 2015-05-22 22:44:03
