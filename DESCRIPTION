@@ -1,5 +1,5 @@
 Package: TSdata
-Version: 2015.4-2
+Version: 2016.8-1
 Title: 'TSdbi' Illustration
 Description: Illustrates the various 'TSdbi' packages with a vignette using time series 
 	data from several sources. The vignette also illustrates some simple time series
@@ -8,15 +8,15 @@ Depends: R (>= 2.8.0)
 Suggests: tframe, tframePlus, tfplot, TSdbi (>= 2015.1-1), TSsql (>=
         2015.1-1), TSPostgreSQL (>= 2015.1-1), TSMySQL (>= 2015.4-1),
         TSSQLite (>= 2015.1-1), TSodbc (>= 2015.1-1), TSsdmx, TSmisc,
-        TScompare (>= 2015.1-1), zoo, xts, tseries, its, WriteXLS, DBI
-        (>= 0.3.1), RPostgreSQL, RSQLite, RMySQL, RODBC, RJSDMX
+        TScompare (>= 2015.1-1), zoo, xts, tseries, WriteXLS, DBI (>=
+        0.3.1), RPostgreSQL, RSQLite, RMySQL, RODBC, RJSDMX
 BuildVignettes: true
 License: GPL-2
-Copyright: 2012-2015 Paul Gilbert.
+Copyright: 2012-2016 Paul Gilbert.
 Author: Paul Gilbert <pgilbert.ttv9z@ncf.ca>
 Maintainer: Paul Gilbert <pgilbert.ttv9z@ncf.ca>
 URL: http://tsdbi.r-forge.r-project.org/
 NeedsCompilation: no
-Packaged: 2015-05-22 15:31:29 UTC; paul
+Packaged: 2016-08-25 14:40:48 UTC; paul
 Repository: CRAN
-Date/Publication: 2015-05-22 22:44:03
+Date/Publication: 2016-08-26 20:35:25
